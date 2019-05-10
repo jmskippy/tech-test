@@ -1,24 +1,28 @@
-﻿namespace AnyCompany
+﻿using System;
+
+namespace AnyCompany
 {
     public class OrderService
     {
-        private readonly OrderRepository orderRepository = new OrderRepository();
+        private readonly IOrderRepository orderRepository;
 
-        public bool PlaceOrder(Order order, int customerId)
+        public OrderService(IOrderRepository orderRepository)
         {
-            Customer customer = CustomerRepository.Load(customerId);
+            this.orderRepository = orderRepository;
+        }
 
+        public void PlaceOrder(Order order, int customerId)
+        {
             if (order.Amount == 0)
-                return false;
+            {
+                throw new ArgumentException("Order Amount cannot be zero.", nameof(order));
+            }
 
-            if (customer.Country == "UK")
-                order.VAT = 0.2d;
-            else
-                order.VAT = 0;
+            var customer = CustomerRepository.Load(customerId);
 
-            orderRepository.Save(order);
+            order.VAT = customer.Country == "UK" ? 0.2d : 0;
 
-            return true;
+            orderRepository.Save(order, customer);
         }
     }
 }
